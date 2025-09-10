@@ -1,47 +1,79 @@
 import express from "express";
+import pool from "../db.js";
 
 const router = express.Router();
 
-// временные данные для теста
-let positions = [
-  {
-    id: 1,
-    symbol: "BTCUSDT",
-    entry: 30000,
-    stopLoss: 29500,
-    riskPercent: 2,
-    volume: 0.01,
-    potentialLoss: 50,
-  },
-  {
-    id: 2,
-    symbol: "ETHUSDT",
-    entry: 1800,
-    stopLoss: 1750,
-    riskPercent: 2,
-    volume: 0.5,
-    potentialLoss: 25,
-  },
-];
-
-// GET /positions — вернуть все позиции
-router.get("/", (req, res) => {
-  res.json(positions);
+// --- Получить все позиции ---
+router.get("/", async (req, res) => {
+  try {
+    const result = await pool.query("SELECT * FROM positions ORDER BY created_at DESC");
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Ошибка сервера");
+  }
 });
 
-// POST /positions — добавить новую позицию
-router.post("/", (req, res) => {
-  const newPos = req.body;
-  newPos.id = positions.length ? positions[positions.length - 1].id + 1 : 1;
-  positions.push(newPos);
-  res.status(201).json(newPos);
+// --- Получить позиции конкретного пользователя ---
+router.get("/:user_id", async (req, res) => {
+  try {
+    const { user_id } = req.params;
+    const result = await pool.query(
+      "SELECT * FROM positions WHERE user_id = $1 ORDER BY created_at DESC",
+      [user_id]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Ошибка сервера");
+  }
 });
 
-// DELETE /positions/:id — удалить позицию
-router.delete("/:id", (req, res) => {
-  const id = parseInt(req.params.id);
-  positions = positions.filter(pos => pos.id !== id);
-  res.json({ message: "Удалено" });
+// --- Добавить новую позицию ---
+router.post("/", async (req, res) => {
+  try {
+    const { user_id, symbol, entry, stop_loss, risk_percent, volume, potential_loss } = req.body;
+    const result = await pool.query(
+      `INSERT INTO positions 
+      (user_id, symbol, entry, stop_loss, risk_percent, volume, potential_loss)
+      VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
+      [user_id, symbol, entry, stop_loss, risk_percent, volume, potential_loss]
+    );
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Ошибка сервера");
+  }
+});
+
+// --- Обновить позицию ---
+router.put("/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { symbol, entry, stop_loss, risk_percent, volume, potential_loss } = req.body;
+    const result = await pool.query(
+      `UPDATE positions SET
+      symbol=$1, entry=$2, stop_loss=$3, risk_percent=$4, volume=$5, potential_loss=$6
+      WHERE id=$7 RETURNING *`,
+      [symbol, entry, stop_loss, risk_percent, volume, potential_loss, id]
+    );
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Ошибка сервера");
+  }
+});
+
+// --- Удалить позицию ---
+router.delete("/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    await pool.query("DELETE FROM positions WHERE id=$1", [id]);
+    res.json({ message: "Позиция удалена" });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Ошибка сервера");
+  }
 });
 
 export default router;
