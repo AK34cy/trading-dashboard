@@ -3,7 +3,11 @@ import HeaderPanel from "./components/HeaderPanel";
 import DepositPanel from "./components/DepositPanel";
 import PositionsTable from "./components/PositionsTable";
 import NewPositionForm from "./components/NewPositionForm";
-import usePositions from "./hooks/usePositions";
+import {
+  getPositions,
+  addPosition as apiAddPosition,
+  deletePosition as apiDeletePosition,
+} from "./api/api";
 
 function App() {
   // Курсы
@@ -19,10 +23,8 @@ function App() {
   // Доступный Объём (ДО)
   const [availableVolume] = useState(100000);
 
-  // Позиции через хук
-  const { positions, add, remove, loading } = usePositions();
-
-  // Новая позиция
+  // Позиции
+  const [positions, setPositions] = useState([]);
   const [newPosition, setNewPosition] = useState({
     symbol: "",
     entry: "",
@@ -48,30 +50,53 @@ function App() {
     return () => clearInterval(interval);
   }, []);
 
+  // Загрузка позиций из БД
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const data = await getPositions();
+        setPositions(data);
+      } catch (err) {
+        console.error("Ошибка загрузки позиций:", err);
+      }
+    };
+    fetchData();
+  }, []);
+
   // Добавление позиции
-  const handleAddPosition = () => {
+  const addPosition = async () => {
     if (!newPosition.symbol || !newPosition.stopLoss || !newPosition.riskPercent) return;
 
-    const symbol = newPosition.symbol.toUpperCase();
-    const entry = prices[symbol] || parseFloat(newPosition.entry);
-    const stopLoss = parseFloat(newPosition.stopLoss);
-    const riskPercent = parseFloat(newPosition.riskPercent);
+    try {
+      const symbol = newPosition.symbol.toUpperCase();
+      const entry = prices[symbol] || parseFloat(newPosition.entry);
+      const stopLoss = parseFloat(newPosition.stopLoss);
+      const riskPercent = parseFloat(newPosition.riskPercent);
 
-    const totalDeposit = depositUSDT + depositBTC * prices.BTC;
-    const riskAmount = (riskPercent / 100) * totalDeposit;
-    const volume = riskAmount / Math.abs(entry - stopLoss);
-    const potentialLoss = riskAmount;
+      const totalDeposit = depositUSDT + depositBTC * prices.BTC;
+      const riskAmount = (riskPercent / 100) * totalDeposit;
+      const volume = riskAmount / Math.abs(entry - stopLoss);
+      const potentialLoss = riskAmount;
 
-    const position = { symbol, entry, stopLoss, riskPercent, volume, potentialLoss };
-    add(position);
+      const position = { symbol, entry, stopLoss, riskPercent, volume, potentialLoss };
+      const saved = await apiAddPosition(position);
 
-    // Сброс полей новой позиции с подставленным стандартным %
-    setNewPosition({ symbol: "", entry: "", stopLoss: "", riskPercent: standardPosition });
+      setPositions([...positions, saved]);
+      setNewPosition({ symbol: "", entry: "", stopLoss: "", riskPercent: standardPosition });
+    } catch (err) {
+      console.error("Ошибка при добавлении позиции:", err);
+    }
   };
 
-  if (loading) {
-    return <div className="p-6">Загрузка позиций...</div>;
-  }
+  // Удаление позиции
+  const removePosition = async (id) => {
+    try {
+      await apiDeletePosition(id);
+      setPositions(positions.filter((pos) => pos.id !== id));
+    } catch (err) {
+      console.error("Ошибка при удалении позиции:", err);
+    }
+  };
 
   return (
     <div className="p-6 max-w-6xl mx-auto font-sans">
@@ -88,12 +113,12 @@ function App() {
         availableVolume={availableVolume}
       />
 
-      <PositionsTable positions={positions} prices={prices} removePosition={remove} />
+      <PositionsTable positions={positions} prices={prices} removePosition={removePosition} />
 
       <NewPositionForm
         newPosition={newPosition}
         setNewPosition={setNewPosition}
-        addPosition={handleAddPosition}
+        addPosition={addPosition}
       />
     </div>
   );
