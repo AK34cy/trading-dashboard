@@ -28,7 +28,7 @@ router.post("/", async (req, res) => {
       entry,
       stop_loss,
       risk_percent,
-      entry_amount,
+      amount,
       take_profit,
       leverage,
       status,
@@ -43,7 +43,7 @@ router.post("/", async (req, res) => {
 
     const result = await pool.query(
       `INSERT INTO positions
-        (user_id, symbol, entry, stop_loss, risk_percent, entry_amount,
+        (user_id, symbol, entry, stop_loss, risk_percent, amount,
          take_profit, leverage, status, closed_at, notes, order_type, exchange,
          fee_open, fee_close, fee_funding)
        VALUES
@@ -55,7 +55,7 @@ router.post("/", async (req, res) => {
         entry,
         stop_loss,
         risk_percent,
-        entry_amount,
+        amount,
         take_profit,
         leverage,
         status || "open",
