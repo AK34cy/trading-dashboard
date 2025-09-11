@@ -1,78 +1,77 @@
 import express from "express";
-import pool from "../db.js";
+import db from "../db.js";
 
 const router = express.Router();
 
-// --- Получить все позиции ---
+// Получение всех позиций
 router.get("/", async (req, res) => {
   try {
-    const result = await pool.query("SELECT * FROM positions ORDER BY created_at DESC");
+    const result = await db.query("SELECT * FROM positions ORDER BY id ASC");
     res.json(result.rows);
   } catch (err) {
-    console.error(err.message);
-    res.status(500).send("Ошибка сервера");
+    console.error(err);
+    res.status(500).json({ error: "Ошибка при получении позиций" });
   }
 });
 
-// --- Получить позиции конкретного пользователя ---
-router.get("/:user_id", async (req, res) => {
+// Получение одной позиции по id
+router.get("/:id", async (req, res) => {
   try {
-    const { user_id } = req.params;
-    const result = await pool.query(
-      "SELECT * FROM positions WHERE user_id = $1 ORDER BY created_at DESC",
-      [user_id]
-    );
-    res.json(result.rows);
+    const { id } = req.params;
+    const result = await db.query("SELECT * FROM positions WHERE id=$1", [id]);
+    if (result.rows.length === 0) return res.status(404).json({ error: "Позиция не найдена" });
+    res.json(result.rows[0]);
   } catch (err) {
-    console.error(err.message);
-    res.status(500).send("Ошибка сервера");
+    console.error(err);
+    res.status(500).json({ error: "Ошибка при получении позиции" });
   }
 });
 
-// --- Добавить новую позицию ---
+// Добавление позиции
 router.post("/", async (req, res) => {
   try {
-    const { user_id, symbol, entry, stop_loss, risk_percent, volume, potential_loss } = req.body;
-    const result = await pool.query(
-      `INSERT INTO positions 
-      (user_id, symbol, entry, stop_loss, risk_percent, volume, potential_loss)
-      VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
-      [user_id, symbol, entry, stop_loss, risk_percent, volume, potential_loss]
+    const { symbol, entry, stopLoss, riskPercent, volume, potentialLoss } = req.body;
+    const result = await db.query(
+      "INSERT INTO positions(symbol, entry, stop_loss, risk_percent, volume, potential_loss) VALUES($1,$2,$3,$4,$5,$6) RETURNING *",
+      [symbol, entry, stopLoss, riskPercent, volume, potentialLoss]
     );
     res.json(result.rows[0]);
   } catch (err) {
-    console.error(err.message);
-    res.status(500).send("Ошибка сервера");
+    console.error(err);
+    res.status(500).json({ error: "Ошибка при добавлении позиции" });
   }
 });
 
-// --- Обновить позицию ---
+// Обновление позиции по id
 router.put("/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const { symbol, entry, stop_loss, risk_percent, volume, potential_loss } = req.body;
-    const result = await pool.query(
-      `UPDATE positions SET
-      symbol=$1, entry=$2, stop_loss=$3, risk_percent=$4, volume=$5, potential_loss=$6
-      WHERE id=$7 RETURNING *`,
-      [symbol, entry, stop_loss, risk_percent, volume, potential_loss, id]
+    const { symbol, entry, stopLoss, riskPercent, volume, potentialLoss } = req.body;
+    const result = await db.query(
+      `UPDATE positions
+       SET symbol=$1, entry=$2, stop_loss=$3, risk_percent=$4, volume=$5, potential_loss=$6
+       WHERE id=$7
+       RETURNING *`,
+      [symbol, entry, stopLoss, riskPercent, volume, potentialLoss, id]
     );
+    if (result.rows.length === 0) return res.status(404).json({ error: "Позиция не найдена" });
     res.json(result.rows[0]);
   } catch (err) {
-    console.error(err.message);
-    res.status(500).send("Ошибка сервера");
+    console.error(err);
+    res.status(500).json({ error: "Ошибка при обновлении позиции" });
   }
 });
 
-// --- Удалить позицию ---
+// Удаление позиции по id
 router.delete("/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    await pool.query("DELETE FROM positions WHERE id=$1", [id]);
-    res.json({ message: "Позиция удалена" });
+    const result = await db.query("DELETE FROM positions WHERE id=$1 RETURNING *", [id]);
+    if (result.rows.length === 0) return res.status(404).json({ error: "Позиция не найдена" });
+    res.json({ message: "Позиция удалена", position: result.rows[0] });
   } catch (err) {
-    console.error(err.message);
-    res.status(500).send("Ошибка сервера");
+    console.error(err);
+    res.status(500).json({ error: "Ошибка при удалении позиции" });
   }
 });
 
