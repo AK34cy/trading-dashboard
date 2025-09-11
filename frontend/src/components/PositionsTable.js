@@ -1,7 +1,14 @@
 import React from "react";
-import { getPositions, addPosition, updatePosition, deletePosition } from "../api/api";
 
 export default function PositionsTable({ positions, prices, removePosition }) {
+  const handleRemove = async (id) => {
+    try {
+      await removePosition(id);
+    } catch (err) {
+      console.error("Ошибка при удалении позиции:", err);
+    }
+  };
+
   return (
     <table className="w-full border border-gray-300 mb-6">
       <thead className="bg-gray-100">
@@ -18,8 +25,8 @@ export default function PositionsTable({ positions, prices, removePosition }) {
         </tr>
       </thead>
       <tbody>
-        {positions.map((pos, index) => (
-          <tr key={index}>
+        {positions.map((pos) => (
+          <tr key={pos.id}>
             <td className="border px-2 py-1">{pos.symbol}</td>
             <td className="border px-2 py-1">{pos.entry}</td>
             <td className="border px-2 py-1">{pos.stopLoss}</td>
@@ -34,7 +41,7 @@ export default function PositionsTable({ positions, prices, removePosition }) {
             <td className="border px-2 py-1">{pos.potentialLoss.toFixed(2)}</td>
             <td className="border px-2 py-1">
               <button
-                onClick={() => removePosition(index)}
+                onClick={() => handleRemove(pos.id)}
                 className="text-red-500"
               >
                 Удалить
