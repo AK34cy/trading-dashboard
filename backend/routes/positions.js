@@ -1,76 +1,129 @@
+// backend/routes/positions.js
 import express from "express";
-import db from "../db.js";
+import pool from "../db.js";
 
 const router = express.Router();
 
-// Получение всех позиций
-router.get("/", async (req, res) => {
+// GET все позиции пользователя
+router.get("/:user_id", async (req, res) => {
+  const { user_id } = req.params;
   try {
-    const result = await db.query("SELECT * FROM positions ORDER BY id ASC");
+    const result = await pool.query(
+      "SELECT * FROM positions WHERE user_id = $1 ORDER BY id ASC",
+      [user_id]
+    );
     res.json(result.rows);
   } catch (err) {
-    console.error(err);
+    console.error("Ошибка при получении позиций:", err.message);
     res.status(500).json({ error: "Ошибка сервера при получении позиций" });
   }
 });
 
-// Получение позиции по ID
-router.get("/:id", async (req, res) => {
-  const { id } = req.params;
-  try {
-    const result = await db.query("SELECT * FROM positions WHERE id=$1", [id]);
-    if (result.rows.length === 0) return res.status(404).json({ error: "Позиция не найдена" });
-    res.json(result.rows[0]);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Ошибка сервера при получении позиции" });
-  }
-});
-
-// Добавление новой позиции
+// POST добавить новую позицию
 router.post("/", async (req, res) => {
-  const { symbol, entry, stopLoss, riskPercent, volume, potentialLoss } = req.body;
   try {
-    const result = await db.query(
-      "INSERT INTO positions(symbol, entry, stop_loss, risk_percent, volume, potential_loss) VALUES($1,$2,$3,$4,$5,$6) RETURNING *",
-      [symbol, entry, stopLoss, riskPercent, volume, potentialLoss]
+    const {
+      user_id,
+      symbol,
+      entry,
+      stop_loss,
+      risk_percent,
+      entry_amount,
+      take_profit,
+      leverage,
+      status,
+      closed_at,
+      notes,
+      order_type,
+      exchange,
+      fee_open,
+      fee_close,
+      fee_funding,
+    } = req.body;
+
+    const result = await pool.query(
+      `INSERT INTO positions
+        (user_id, symbol, entry, stop_loss, risk_percent, entry_amount,
+         take_profit, leverage, status, closed_at, notes, order_type, exchange,
+         fee_open, fee_close, fee_funding)
+       VALUES
+        ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
+       RETURNING *`,
+      [
+        user_id,
+        symbol,
+        entry,
+        stop_loss,
+        risk_percent,
+        entry_amount,
+        take_profit,
+        leverage,
+        status || "open",
+        closed_at,
+        notes,
+        order_type,
+        exchange,
+        fee_open,
+        fee_close,
+        fee_funding,
+      ]
     );
+
     res.json(result.rows[0]);
   } catch (err) {
-    console.error(err);
+    console.error("Ошибка при добавлении позиции:", err.message);
     res.status(500).json({ error: "Ошибка сервера при добавлении позиции" });
   }
 });
 
-// Обновление позиции по ID
+// PUT обновить позицию
 router.put("/:id", async (req, res) => {
   const { id } = req.params;
-  const { symbol, entry, stopLoss, riskPercent, volume, potentialLoss } = req.body;
   try {
-    const result = await db.query(
-      `UPDATE positions 
-       SET symbol=$1, entry=$2, stop_loss=$3, risk_percent=$4, volume=$5, potential_loss=$6 
-       WHERE id=$7 
-       RETURNING *`,
-      [symbol, entry, stopLoss, riskPercent, volume, potentialLoss, id]
+    const fields = req.body;
+    const keys = Object.keys(fields);
+    const values = Object.values(fields);
+
+    if (keys.length === 0) {
+      return res.status(400).json({ error: "Нет данных для обновления" });
+    }
+
+    const setClause = keys.map((key, idx) => `${key} = $${idx + 1}`).join(", ");
+
+    const result = await pool.query(
+      `UPDATE positions SET ${setClause} WHERE id = $${
+        keys.length + 1
+      } RETURNING *`,
+      [...values, id]
     );
-    if (result.rows.length === 0) return res.status(404).json({ error: "Позиция не найдена" });
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Позиция не найдена" });
+    }
+
     res.json(result.rows[0]);
   } catch (err) {
-    console.error(err);
+    console.error("Ошибка при обновлении позиции:", err.message);
     res.status(500).json({ error: "Ошибка сервера при обновлении позиции" });
   }
 });
 
-// Удаление позиции по ID
+// DELETE удалить позицию
 router.delete("/:id", async (req, res) => {
   const { id } = req.params;
   try {
-    const result = await db.query("DELETE FROM positions WHERE id=$1 RETURNING *", [id]);
-    if (result.rows.length === 0) return res.status(404).json({ error: "Позиция не найдена" });
-    res.json({ message: "Позиция удалена", position: result.rows[0] });
+    const result = await pool.query(
+      "DELETE FROM positions WHERE id = $1 RETURNING *",
+      [id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Позиция не найдена" });
+    }
+
+    res.json({ message: "Позиция удалена", deleted: result.rows[0] });
   } catch (err) {
-    console.error(err);
+    console.error("Ошибка при удалении позиции:", err.message);
     res.status(500).json({ error: "Ошибка сервера при удалении позиции" });
   }
 });
