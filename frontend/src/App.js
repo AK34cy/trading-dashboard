@@ -10,30 +10,20 @@ import {
 } from "./api/api";
 
 function App() {
-  // Курсы
   const [prices, setPrices] = useState({ BTC: 0, ETH: 0 });
-
-  // Депозиты
   const [depositUSDT, setDepositUSDT] = useState(50000);
   const [depositBTC, setDepositBTC] = useState(1);
-
-  // Стандартная позиция
   const [standardPosition, setStandardPosition] = useState(2);
-
-  // Доступный Объём (ДО)
   const [availableVolume] = useState(100000);
-
-  // Позиции
   const [positions, setPositions] = useState([]);
   const [newPosition, setNewPosition] = useState({
     symbol: "",
     entry: "",
     stopLoss: "",
     riskPercent: standardPosition,
-    amount: "", // теперь поле amount
+    amount: "",
   });
 
-  // Получение курсов BTC и ETH
   useEffect(() => {
     const fetchPrices = () => {
       fetch(
@@ -51,7 +41,6 @@ function App() {
     return () => clearInterval(interval);
   }, []);
 
-  // Загрузка позиций из БД
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -64,7 +53,6 @@ function App() {
     fetchData();
   }, []);
 
-  // Добавление позиции
   const addPosition = async () => {
     if (!newPosition.symbol || !newPosition.stopLoss || !newPosition.riskPercent || !newPosition.amount) return;
 
@@ -80,21 +68,17 @@ function App() {
         entry,
         stop_loss: stopLoss,
         risk_percent: riskPercent,
-        amount, // теперь совпадает с базой
-        status: "open",
-        // Можно позже добавить take_profit, leverage, notes, order_type, exchange, fee_open/close/funding
+        amount,
       };
 
       const saved = await apiAddPosition(position);
       if (saved) setPositions([...positions, saved]);
-
       setNewPosition({ symbol: "", entry: "", stopLoss: "", riskPercent: standardPosition, amount: "" });
     } catch (err) {
       console.error("Ошибка при добавлении позиции:", err);
     }
   };
 
-  // Удаление позиции
   const removePosition = async (id) => {
     try {
       await apiDeletePosition(id);
