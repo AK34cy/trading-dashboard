@@ -30,6 +30,7 @@ function App() {
     entry: "",
     stopLoss: "",
     riskPercent: standardPosition,
+    amount: "", // теперь поле amount
   });
 
   // Получение курсов BTC и ETH
@@ -65,24 +66,29 @@ function App() {
 
   // Добавление позиции
   const addPosition = async () => {
-    if (!newPosition.symbol || !newPosition.stopLoss || !newPosition.riskPercent) return;
+    if (!newPosition.symbol || !newPosition.stopLoss || !newPosition.riskPercent || !newPosition.amount) return;
 
     try {
       const symbol = newPosition.symbol.toUpperCase();
       const entry = prices[symbol] || parseFloat(newPosition.entry);
       const stopLoss = parseFloat(newPosition.stopLoss);
       const riskPercent = parseFloat(newPosition.riskPercent);
+      const amount = parseFloat(newPosition.amount);
 
-      const totalDeposit = depositUSDT + depositBTC * prices.BTC;
-      const riskAmount = (riskPercent / 100) * totalDeposit;
-      const volume = riskAmount / Math.abs(entry - stopLoss);
-      const potentialLoss = riskAmount;
+      const position = {
+        symbol,
+        entry,
+        stop_loss: stopLoss,
+        risk_percent: riskPercent,
+        amount, // теперь совпадает с базой
+        status: "open",
+        // Можно позже добавить take_profit, leverage, notes, order_type, exchange, fee_open/close/funding
+      };
 
-      const position = { symbol, entry, stopLoss, riskPercent, volume, potentialLoss };
       const saved = await apiAddPosition(position);
+      if (saved) setPositions([...positions, saved]);
 
-      setPositions([...positions, saved]);
-      setNewPosition({ symbol: "", entry: "", stopLoss: "", riskPercent: standardPosition });
+      setNewPosition({ symbol: "", entry: "", stopLoss: "", riskPercent: standardPosition, amount: "" });
     } catch (err) {
       console.error("Ошибка при добавлении позиции:", err);
     }
