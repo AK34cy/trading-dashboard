@@ -3,6 +3,7 @@ import HeaderPanel from "./components/HeaderPanel";
 import DepositPanel from "./components/DepositPanel";
 import PositionsTable from "./components/PositionsTable";
 import NewPositionForm from "./components/NewPositionForm";
+import usePositions from "./hooks/usePositions";
 
 function App() {
   // Курсы
@@ -18,8 +19,10 @@ function App() {
   // Доступный Объём (ДО)
   const [availableVolume] = useState(100000);
 
-  // Остальные состояния
-  const [positions, setPositions] = useState([]);
+  // Позиции через хук
+  const { positions, add, remove, loading } = usePositions();
+
+  // Новая позиция
   const [newPosition, setNewPosition] = useState({
     symbol: "",
     entry: "",
@@ -45,8 +48,8 @@ function App() {
     return () => clearInterval(interval);
   }, []);
 
-  // Функции добавления и удаления позиций
-  const addPosition = () => {
+  // Добавление позиции
+  const handleAddPosition = () => {
     if (!newPosition.symbol || !newPosition.stopLoss || !newPosition.riskPercent) return;
 
     const symbol = newPosition.symbol.toUpperCase();
@@ -60,13 +63,15 @@ function App() {
     const potentialLoss = riskAmount;
 
     const position = { symbol, entry, stopLoss, riskPercent, volume, potentialLoss };
-    setPositions([...positions, position]);
+    add(position);
 
     // Сброс полей новой позиции с подставленным стандартным %
     setNewPosition({ symbol: "", entry: "", stopLoss: "", riskPercent: standardPosition });
   };
 
-  const removePosition = (index) => setPositions(positions.filter((_, i) => i !== index));
+  if (loading) {
+    return <div className="p-6">Загрузка позиций...</div>;
+  }
 
   return (
     <div className="p-6 max-w-6xl mx-auto font-sans">
@@ -83,12 +88,12 @@ function App() {
         availableVolume={availableVolume}
       />
 
-      <PositionsTable positions={positions} prices={prices} removePosition={removePosition} />
+      <PositionsTable positions={positions} prices={prices} removePosition={remove} />
 
       <NewPositionForm
         newPosition={newPosition}
         setNewPosition={setNewPosition}
-        addPosition={addPosition}
+        addPosition={handleAddPosition}
       />
     </div>
   );
