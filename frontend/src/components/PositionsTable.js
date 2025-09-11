@@ -1,4 +1,5 @@
 import React from "react";
+import { getPositions, addPosition, updatePosition, deletePosition } from "../api/api";
 
 export default function PositionsTable({ positions, prices, removePosition }) {
   return (
