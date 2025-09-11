@@ -1,57 +1,67 @@
 import React from "react";
 
-export default function NewPositionForm({
-  newPosition,
-  setNewPosition,
-  addPosition,
-}) {
+export default function NewPositionForm({ newPosition, setNewPosition, addPosition }) {
   const handleChange = (e) => {
-    setNewPosition({ ...newPosition, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setNewPosition((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    addPosition(newPosition);
   };
 
   return (
-    <div className="mb-6">
-      <h2 className="font-bold mb-2">Новая позиция</h2>
-      <div className="grid grid-cols-5 gap-2 mb-2">
+    <form onSubmit={handleSubmit} className="space-y-4 p-4 border rounded bg-gray-50">
+      <div>
+        <label className="block text-sm font-medium">Актив</label>
         <input
           type="text"
           name="symbol"
-          placeholder="Актив (BTC/ETH)"
           value={newPosition.symbol}
           onChange={handleChange}
-          className="border px-2 py-1"
+          className="border p-2 w-full rounded"
         />
+      </div>
+      <div>
+        <label className="block text-sm font-medium">Цена входа (опц.)</label>
         <input
           type="number"
+          step="0.01"
           name="entry"
-          placeholder="Цена входа (необяз.)"
           value={newPosition.entry}
           onChange={handleChange}
-          className="border px-2 py-1"
+          className="border p-2 w-full rounded"
         />
+      </div>
+      <div>
+        <label className="block text-sm font-medium">Стоп-лосс</label>
         <input
           type="number"
+          step="0.01"
           name="stopLoss"
-          placeholder="Стоп-лосс"
           value={newPosition.stopLoss}
           onChange={handleChange}
-          className="border px-2 py-1"
+          className="border p-2 w-full rounded"
         />
+      </div>
+      <div>
+        <label className="block text-sm font-medium">Риск (%)</label>
         <input
           type="number"
+          step="0.1"
           name="riskPercent"
-          placeholder="Риск %"
           value={newPosition.riskPercent}
           onChange={handleChange}
-          className="border px-2 py-1"
+          className="border p-2 w-full rounded"
         />
-        <button
-          onClick={addPosition}
-          className="bg-blue-500 text-white px-4 py-1 rounded"
-        >
-          Добавить
-        </button>
       </div>
-    </div>
+      <button
+        type="submit"
+        className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+      >
+        Добавить позицию
+      </button>
+    </form>
   );
 }
