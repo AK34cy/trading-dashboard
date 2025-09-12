@@ -25,17 +25,23 @@ app.get("/", (req, res) => {
   res.send("Backend is running");
 });
 
-// Логирование маршрутов — безопасно
-setImmediate(() => {
-  if (app._router) {
+// Логирование маршрутов — надёжно
+function logRoutes() {
+  if (app._router && Array.isArray(app._router.stack)) {
     console.log("Подключённые роуты:");
     app._router.stack
-      .filter(r => r.route)
+      .filter(r => r.route) // оставляем только настоящие маршруты
       .forEach(r => {
-        console.log(Object.keys(r.route.methods), r.route.path);
+        const methods = Object.keys(r.route.methods).join(", ").toUpperCase();
+        console.log(`${methods} -> ${r.route.path}`);
       });
+  } else {
+    console.log("Маршруты ещё недоступны");
   }
-});
+}
+
+// Вызов после короткой задержки, чтобы _router точно создался
+setTimeout(logRoutes, 50);
 
 // Start server
 app.listen(PORT, () => {
