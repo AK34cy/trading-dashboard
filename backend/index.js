@@ -30,21 +30,22 @@ app.get("/", (req, res) => {
   res.send("Backend is running");
 });
 
-// Логирование всех слоёв middleware и маршрутов
+// Безопасное логирование маршрутов
 setImmediate(() => {
-  console.log("Содержимое app._router.stack:");
-  app._router.stack.forEach((layer, idx) => {
-    // Для слоёв с route
-    if (layer.route) {
-      console.log(`${idx}: ROUTE path=${layer.route.path}, methods=${Object.keys(layer.route.methods)}`);
-    } else if (layer.name === "router") {
-      // Вложенные роутеры
-      console.log(`${idx}: ROUTER path=`, layer.regexp);
-    } else {
-      // Обычные middleware
-      console.log(`${idx}: MIDDLEWARE name=${layer.name}`);
-    }
-  });
+  if (app._router && app._router.stack) {
+    console.log("Содержимое app._router.stack:");
+    app._router.stack.forEach((layer, idx) => {
+      if (layer.route) {
+        console.log(`${idx}: ROUTE path=${layer.route.path}, methods=${Object.keys(layer.route.methods)}`);
+      } else if (layer.name === "router") {
+        console.log(`${idx}: ROUTER path=`, layer.regexp);
+      } else {
+        console.log(`${idx}: MIDDLEWARE name=${layer.name}`);
+      }
+    });
+  } else {
+    console.log("Маршруты ещё недоступны (_router undefined)");
+  }
 });
 
 // Start server
