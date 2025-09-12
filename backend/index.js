@@ -38,6 +38,13 @@ setImmediate(() => {
 });
 
 // Start server
+console.log("Подключённые роуты:");
+app._router.stack
+  .filter(r => r.route)
+  .forEach(r => {
+    console.log(Object.keys(r.route.methods), r.route.path);
+  });
+
 app.listen(PORT, () => {
   console.log(`Backend running on port ${PORT}`);
 });
