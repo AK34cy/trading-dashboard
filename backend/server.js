@@ -3,6 +3,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 
 import positionsRouter from "./routes/positions.js";
+import pricesRouter from "./routes/prices.js";
 
 dotenv.config();
 
@@ -15,6 +16,9 @@ app.use(express.json());
 
 // маршруты
 app.use("/positions", positionsRouter);
+
+// цены
+app.use("/prices", pricesRouter);
 
 // базовый маршрут для проверки
 app.get("/", (req, res) => {
