@@ -17,29 +17,37 @@ app.use(express.json());
 
 // Routes
 app.use("/positions", positionsRouter);
+console.log("positionsRouter загружен");
+
 app.use("/users", usersRouter);
+console.log("usersRouter загружен");
+
 app.use("/auth", authRouter);
+console.log("authRouter загружен");
 
 // Root
 app.get("/", (req, res) => {
   res.send("Backend is running");
 });
 
+// Логирование всех слоёв middleware и маршрутов
+setImmediate(() => {
+  console.log("Содержимое app._router.stack:");
+  app._router.stack.forEach((layer, idx) => {
+    // Для слоёв с route
+    if (layer.route) {
+      console.log(`${idx}: ROUTE path=${layer.route.path}, methods=${Object.keys(layer.route.methods)}`);
+    } else if (layer.name === "router") {
+      // Вложенные роутеры
+      console.log(`${idx}: ROUTER path=`, layer.regexp);
+    } else {
+      // Обычные middleware
+      console.log(`${idx}: MIDDLEWARE name=${layer.name}`);
+    }
+  });
+});
+
 // Start server
 app.listen(PORT, () => {
   console.log(`Backend running on port ${PORT}`);
-
-  // Даем Express 10 секунд на регистрацию маршрутов, затем логируем
-  setTimeout(() => {
-    if (app._router) {
-      console.log("Подключённые роуты:");
-      app._router.stack
-        .filter(r => r.route)
-        .forEach(r => {
-          console.log(Object.keys(r.route.methods), r.route.path);
-        });
-    } else {
-      console.log("Маршруты недоступны");
-    }
-  }, 10000); // 10 секунд
 });
