@@ -25,20 +25,21 @@ app.get("/", (req, res) => {
   res.send("Backend is running");
 });
 
-// Логирование маршрутов
-if (app._router && Array.isArray(app._router.stack)) {
-  console.log("Подключённые роуты:");
-  app._router.stack
-    .filter(r => r.route)
-    .forEach(r => {
-      const methods = Object.keys(r.route.methods).join(", ").toUpperCase();
-      console.log(`${methods} -> ${r.route.path}`);
-    });
-} else {
-  console.log("Маршруты ещё недоступны");
-}
-
 // Start server
 app.listen(PORT, () => {
   console.log(`Backend running on port ${PORT}`);
+
+  // Даем Express 10 секунд на регистрацию маршрутов, затем логируем
+  setTimeout(() => {
+    if (app._router) {
+      console.log("Подключённые роуты:");
+      app._router.stack
+        .filter(r => r.route)
+        .forEach(r => {
+          console.log(Object.keys(r.route.methods), r.route.path);
+        });
+    } else {
+      console.log("Маршруты недоступны");
+    }
+  }, 10000); // 10 секунд
 });
