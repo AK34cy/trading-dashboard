@@ -44,19 +44,20 @@ function App() {
 
   // Получение курсов BTC и ETH
   useEffect(() => {
-    const fetchPrices = () => {
-      fetch(
-        "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=usd"
-      )
-        .then((res) => res.json())
-        .then((data) =>
-          setPrices({ BTC: data.bitcoin.usd, ETH: data.ethereum.usd })
-        )
-        .catch(console.error);
+    const fetchPrices = async () => {
+      try {
+        const res = await fetch("http://163.5.63.244:5000/prices");
+        const data = await res.json();
+        setPrices({ BTC: data.BTC, ETH: data.ETH });
+      } catch (err) {
+        console.error("Ошибка при загрузке цен:", err);
+        // Заглушка, чтобы интерфейс не ломался
+        setPrices((prev) => prev);
+      }
     };
 
     fetchPrices();
-    const interval = setInterval(fetchPrices, 10000);
+    const interval = setInterval(fetchPrices, 10000); // обновляем каждые 10 сек
     return () => clearInterval(interval);
   }, []);
 
