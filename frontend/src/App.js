@@ -10,11 +10,20 @@ import {
 } from "./api/api";
 
 function App() {
+  // Курсы
   const [prices, setPrices] = useState({ BTC: 0, ETH: 0 });
+
+  // Депозиты
   const [depositUSDT, setDepositUSDT] = useState(50000);
   const [depositBTC, setDepositBTC] = useState(1);
+
+  // Стандартная позиция
   const [standardPosition, setStandardPosition] = useState(2);
+
+  // Доступный Объём (ДО)
   const [availableVolume] = useState(100000);
+
+  // Позиции
   const [positions, setPositions] = useState([]);
   const [newPosition, setNewPosition] = useState({
     symbol: "",
@@ -22,8 +31,18 @@ function App() {
     stopLoss: "",
     riskPercent: standardPosition,
     amount: "",
+    input_type: "coin",
+    take_profit: "",
+    leverage: "",
+    notes: "",
+    order_type: "market",
+    exchange: "Binance",
+    fee_open: "",
+    fee_close: "",
+    fee_funding: "",
   });
 
+  // Получение курсов BTC и ETH
   useEffect(() => {
     const fetchPrices = () => {
       fetch(
@@ -41,6 +60,7 @@ function App() {
     return () => clearInterval(interval);
   }, []);
 
+  // Загрузка позиций из БД
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -53,32 +73,62 @@ function App() {
     fetchData();
   }, []);
 
+  // Добавление позиции
   const addPosition = async () => {
-    if (!newPosition.symbol || !newPosition.stopLoss || !newPosition.riskPercent || !newPosition.amount) return;
+    if (!newPosition.symbol || !newPosition.stopLoss || !newPosition.riskPercent) return;
 
     try {
       const symbol = newPosition.symbol.toUpperCase();
-      const entry = prices[symbol] || parseFloat(newPosition.entry);
+      const entry = newPosition.entry ? parseFloat(newPosition.entry) : prices[symbol] || 0;
       const stopLoss = parseFloat(newPosition.stopLoss);
       const riskPercent = parseFloat(newPosition.riskPercent);
-      const amount = parseFloat(newPosition.amount);
+      const amount = parseFloat(newPosition.amount || 0);
 
       const position = {
+        user_id: 1, // можно динамически
         symbol,
         entry,
         stop_loss: stopLoss,
         risk_percent: riskPercent,
         amount,
+        input_type: newPosition.input_type || "coin",
+        take_profit: newPosition.take_profit ? parseFloat(newPosition.take_profit) : null,
+        leverage: newPosition.leverage ? parseFloat(newPosition.leverage) : null,
+        status: "open",
+        notes: newPosition.notes || "",
+        order_type: newPosition.order_type || "market",
+        exchange: newPosition.exchange || "Binance",
+        fee_open: newPosition.fee_open ? parseFloat(newPosition.fee_open) : 0,
+        fee_close: newPosition.fee_close ? parseFloat(newPosition.fee_close) : 0,
+        fee_funding: newPosition.fee_funding ? parseFloat(newPosition.fee_funding) : 0,
       };
 
       const saved = await apiAddPosition(position);
       if (saved) setPositions([...positions, saved]);
-      setNewPosition({ symbol: "", entry: "", stopLoss: "", riskPercent: standardPosition, amount: "" });
+
+      // Сброс формы
+      setNewPosition({
+        symbol: "",
+        entry: "",
+        stopLoss: "",
+        riskPercent: standardPosition,
+        amount: "",
+        input_type: "coin",
+        take_profit: "",
+        leverage: "",
+        notes: "",
+        order_type: "market",
+        exchange: "Binance",
+        fee_open: "",
+        fee_close: "",
+        fee_funding: "",
+      });
     } catch (err) {
       console.error("Ошибка при добавлении позиции:", err);
     }
   };
 
+  // Удаление позиции
   const removePosition = async (id) => {
     try {
       await apiDeletePosition(id);
