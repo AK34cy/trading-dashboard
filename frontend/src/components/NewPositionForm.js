@@ -1,17 +1,36 @@
-import React from "react";
+import React, { useState } from "react";
 
-function NewPositionForm({ newPosition, setNewPosition, addPosition }) {
+function NewPositionForm({ add }) {
+  const [newPosition, setNewPosition] = useState({
+    symbol: "",
+    entry: "",
+    stop_loss: "",
+    risk_percent: "",
+    amount: "",
+  });
+
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setNewPosition({
-      ...newPosition,
+    setNewPosition((prev) => ({
+      ...prev,
       [name]: value,
-    });
+    }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    addPosition();
+    // вызываем add из хука usePositions, который принимает токен внутри
+    const added = await add(newPosition);
+    if (added) {
+      // сбрасываем форму
+      setNewPosition({
+        symbol: "",
+        entry: "",
+        stop_loss: "",
+        risk_percent: "",
+        amount: "",
+      });
+    }
   };
 
   return (
@@ -24,6 +43,7 @@ function NewPositionForm({ newPosition, setNewPosition, addPosition }) {
           onChange={handleChange}
           placeholder="Актив"
           className="border p-2 rounded"
+          required
         />
         <input
           type="number"
@@ -32,22 +52,26 @@ function NewPositionForm({ newPosition, setNewPosition, addPosition }) {
           onChange={handleChange}
           placeholder="Вход"
           className="border p-2 rounded"
+          step="any"
+          required
         />
         <input
           type="number"
-          name="stopLoss"
-          value={newPosition.stopLoss}
+          name="stop_loss"
+          value={newPosition.stop_loss}
           onChange={handleChange}
           placeholder="Стоп"
           className="border p-2 rounded"
+          step="any"
         />
         <input
           type="number"
-          name="riskPercent"
-          value={newPosition.riskPercent}
+          name="risk_percent"
+          value={newPosition.risk_percent}
           onChange={handleChange}
           placeholder="Риск %"
           className="border p-2 rounded"
+          step="any"
         />
         <input
           type="number"
