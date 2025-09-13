@@ -1,1 +1,69 @@
+// frontend/src/components/LoginForm.js
+import React, { useState } from "react";
+import { loginUser } from "../api/api";
 
+export default function LoginForm({ onLoginSuccess }) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+
+    try {
+      const response = await loginUser(email, password);
+      if (response && response.token) {
+        // Токен уже сохранён в localStorage в api.js
+        onLoginSuccess?.(response.user); // сообщаем родителю об успешном логине
+      } else {
+        setError(response?.error || "Ошибка при логине");
+      }
+    } catch (err) {
+      console.error("LoginForm handleSubmit error:", err);
+      setError("Ошибка при логине");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="max-w-sm mx-auto p-4 border rounded bg-gray-50">
+      <h2 className="text-xl font-bold mb-4">Вход</h2>
+
+      <div className="mb-2">
+        <label className="block mb-1 text-sm font-medium">Email</label>
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+          className="border px-2 py-1 w-full rounded"
+        />
+      </div>
+
+      <div className="mb-2">
+        <label className="block mb-1 text-sm font-medium">Пароль</label>
+        <input
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+          className="border px-2 py-1 w-full rounded"
+        />
+      </div>
+
+      {error && <p className="text-red-600 mb-2">{error}</p>}
+
+      <button
+        type="submit"
+        disabled={loading}
+        className="bg-blue-500 text-white px-4 py-2 rounded w-full"
+      >
+        {loading ? "Входим..." : "Войти"}
+      </button>
+    </form>
+  );
+}
