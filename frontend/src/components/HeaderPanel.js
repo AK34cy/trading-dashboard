@@ -1,17 +1,17 @@
 import React from "react";
 
 export default function HeaderPanel({
-  btcPrice,
-  depositUSDT,
+  btcPrice = 0,
+  depositUSDT = 0,
   setDepositUSDT,
-  depositBTC,
+  depositBTC = 0,
   setDepositBTC,
-  standardPosition,
+  standardPosition = 0,
   setStandardPosition,
-  availableVolume,
+  availableVolume = 0,
 }) {
   // Общий депозит в USDT (учитываем BTC через курс)
-  const totalDepositUSDT = depositUSDT + depositBTC * btcPrice;
+  const totalDepositUSDT = (depositUSDT || 0) + (depositBTC || 0) * (btcPrice || 0);
 
   return (
     <div className="mb-6 p-4 border rounded bg-gray-50">
@@ -24,23 +24,24 @@ export default function HeaderPanel({
           <p className="mt-1 text-green-600 font-bold">${btcPrice.toFixed(2)}</p>
         </div>
 
-        {/* Депозит */}
+        {/* Депозит USDT */}
         <div>
           <label className="block text-sm font-medium">Депозит USDT</label>
           <input
             type="number"
             value={depositUSDT}
-            onChange={(e) => setDepositUSDT(parseFloat(e.target.value))}
+            onChange={(e) => setDepositUSDT(parseFloat(e.target.value) || 0)}
             className="border px-2 py-1 w-full"
           />
         </div>
 
+        {/* Депозит BTC */}
         <div>
           <label className="block text-sm font-medium">Депозит BTC</label>
           <input
             type="number"
             value={depositBTC}
-            onChange={(e) => setDepositBTC(parseFloat(e.target.value))}
+            onChange={(e) => setDepositBTC(parseFloat(e.target.value) || 0)}
             className="border px-2 py-1 w-full"
           />
         </div>
@@ -57,7 +58,7 @@ export default function HeaderPanel({
           <input
             type="number"
             value={standardPosition}
-            onChange={(e) => setStandardPosition(parseFloat(e.target.value))}
+            onChange={(e) => setStandardPosition(parseFloat(e.target.value) || 0)}
             className="border px-2 py-1 w-full"
           />
         </div>
@@ -66,7 +67,7 @@ export default function HeaderPanel({
       {/* Доступный Объём */}
       <div className="mt-4">
         <label className="block text-sm font-medium">Доступный Объём (ДО)</label>
-        <p className="mt-1 text-blue-600 font-bold">{availableVolume.toLocaleString()}</p>
+        <p className="mt-1 text-blue-600 font-bold">{(availableVolume || 0).toLocaleString()}</p>
       </div>
     </div>
   );
