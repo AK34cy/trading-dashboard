@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 import Auth from "./pages/Auth";
+import './index.css';
 
 // Попытка получить токен и пользователя из localStorage
 const storedToken = localStorage.getItem("token");
