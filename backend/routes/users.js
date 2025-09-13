@@ -27,16 +27,16 @@ router.post("/register", async (req, res) => {
   try {
     const { email, name, password } = req.body;
     const hash = await bcrypt.hash(password, 10);
-
+    console.log("Данные для регистрации:", email, name, password, hash);
     const result = await pool.query(
       "INSERT INTO users (email, name, password_hash) VALUES ($1, $2, $3) RETURNING id, email, name, avatar, created_at",
       [email, name, hash]
     );
     res.json(result.rows[0]);
   } catch (err) {
-    console.error("Ошибка при регистрации:", err.message);
-    res.status(500).json({ error: "Ошибка сервера" });
-  }
+      console.error("Ошибка при регистрации:", err);
+      res.status(500).json({ error: err.message });
+    }
 });
 
 export default router;
