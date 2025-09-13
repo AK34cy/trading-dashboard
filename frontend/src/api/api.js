@@ -1,32 +1,73 @@
-// frontend/src/api/api.js
 const BASE_URL = "http://163.5.63.244:5000"; // адрес вашего backend
 
-// Вспомогательная парс-функция — безопасно парсит JSON, если он есть
+// Получаем токен из localStorage
+function getToken() {
+  return localStorage.getItem("token");
+}
+
+// Формируем заголовки с авторизацией
+function authHeaders() {
+  const token = getToken();
+  return token ? { "Authorization": `Bearer ${token}` } : {};
+}
+
+// Универсальный безопасный парсер JSON
 async function tryParseJson(response) {
   const ct = response.headers.get("content-type") || "";
   if (ct.includes("application/json")) {
     return await response.json();
   }
   const text = await response.text();
-  console.warn("API responded with non-JSON content:", text.slice(0, 300));
+  console.warn("API ответил не JSON:", text.slice(0, 300));
   return null;
 }
+
+// ======== Auth API ========
+
+export async function loginUser(email, password) {
+  try {
+    const res = await fetch(`${BASE_URL}/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+    const json = await tryParseJson(res);
+    if (!res.ok) throw new Error(json?.error || res.statusText);
+    if (json.token) localStorage.setItem("token", json.token);
+    return json;
+  } catch (err) {
+    console.error("loginUser error:", err);
+    return null;
+  }
+}
+
+export async function registerUser(email, name, password) {
+  try {
+    const res = await fetch(`${BASE_URL}/users/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, name, password }),
+    });
+    const json = await tryParseJson(res);
+    if (!res.ok) throw new Error(json?.error || res.statusText);
+    return json;
+  } catch (err) {
+    console.error("registerUser error:", err);
+    return null;
+  }
+}
+
+// ======== Positions API ========
 
 export async function getPositions(user_id) {
   try {
     const endpoint = user_id ? `/positions/${user_id}` : `/positions`;
-    const res = await fetch(`${BASE_URL}${endpoint}`);
-    if (!res.ok) {
-      const body = await tryParseJson(res);
-      throw new Error(`Ошибка при получении позиций: ${res.status} ${res.statusText} ${body ? JSON.stringify(body) : ""}`);
-    }
+    const res = await fetch(`${BASE_URL}${endpoint}`, {
+      headers: { ...authHeaders(), "Content-Type": "application/json" },
+    });
     const json = await tryParseJson(res);
-    if (!json) return [];
-    if (Array.isArray(json)) return json;
-    if (json.rows && Array.isArray(json.rows)) return json.rows;
-    if (json.id || json.symbol) return [json];
-    console.warn("Неизвестный формат ответа getPositions:", json);
-    return [];
+    if (!res.ok) throw new Error(json?.error || res.statusText);
+    return Array.isArray(json) ? json : [json];
   } catch (err) {
     console.error("getPositions error:", err);
     return [];
@@ -37,23 +78,12 @@ export async function addPosition(position) {
   try {
     const res = await fetch(`${BASE_URL}/positions`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { ...authHeaders(), "Content-Type": "application/json" },
       body: JSON.stringify(position),
     });
-
-    if (!res.ok) {
-      const body = await tryParseJson(res);
-      throw new Error(`Ошибка при добавлении позиции: ${res.status} ${res.statusText} ${body ? JSON.stringify(body) : ""}`);
-    }
-
     const json = await tryParseJson(res);
-    console.log("api.addPosition response:", json);
-    if (!json) return null;
-    if (json.rows && Array.isArray(json.rows) && json.rows[0]) return json.rows[0];
-    if (json.id || json.symbol) return json;
-    if (Array.isArray(json) && json[0]) return json[0];
-    console.warn("addPosition: неожиданный формат ответа:", json);
-    return null;
+    if (!res.ok) throw new Error(json?.error || res.statusText);
+    return json;
   } catch (err) {
     console.error("addPosition error:", err);
     return null;
@@ -64,17 +94,11 @@ export async function updatePosition(id, position) {
   try {
     const res = await fetch(`${BASE_URL}/positions/${id}`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: { ...authHeaders(), "Content-Type": "application/json" },
       body: JSON.stringify(position),
     });
-    if (!res.ok) {
-      const body = await tryParseJson(res);
-      throw new Error(`Ошибка при обновлении позиции: ${res.status} ${res.statusText} ${body ? JSON.stringify(body) : ""}`);
-    }
     const json = await tryParseJson(res);
-    if (!json) return null;
-    if (json.rows && Array.isArray(json.rows) && json.rows[0]) return json.rows[0];
-    if (json.id || json.symbol) return json;
+    if (!res.ok) throw new Error(json?.error || res.statusText);
     return json;
   } catch (err) {
     console.error("updatePosition error:", err);
@@ -86,12 +110,10 @@ export async function deletePosition(id) {
   try {
     const res = await fetch(`${BASE_URL}/positions/${id}`, {
       method: "DELETE",
+      headers: authHeaders(),
     });
-    if (!res.ok) {
-      const body = await tryParseJson(res);
-      throw new Error(`Ошибка при удалении позиции: ${res.status} ${res.statusText} ${body ? JSON.stringify(body) : ""}`);
-    }
     const json = await tryParseJson(res);
+    if (!res.ok) throw new Error(json?.error || res.statusText);
     return json || { ok: true };
   } catch (err) {
     console.error("deletePosition error:", err);
