@@ -1,6 +1,6 @@
 import React from "react";
 
-function PositionsTable({ positions, prices, removePosition }) {
+function PositionsTable({ positions, prices, remove }) {
   return (
     <table className="w-full border-collapse border border-gray-300">
       <thead>
@@ -19,6 +19,7 @@ function PositionsTable({ positions, prices, removePosition }) {
         {positions.map((pos) => {
           const currentPrice = prices[pos.symbol] || 0;
           const potentialProfit = pos.amount * (currentPrice - pos.entry);
+
           return (
             <tr key={pos.id}>
               <td className="border px-2 py-1">{pos.id}</td>
@@ -30,7 +31,7 @@ function PositionsTable({ positions, prices, removePosition }) {
               <td className="border px-2 py-1">{potentialProfit.toFixed(2)}</td>
               <td className="border px-2 py-1">
                 <button
-                  onClick={() => removePosition(pos.id)}
+                  onClick={() => remove(pos.id)}
                   className="bg-red-500 text-white px-2 py-1 rounded"
                 >
                   Удалить
