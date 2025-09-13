@@ -1,12 +1,13 @@
 // backend/routes/positions.js
 import express from "express";
 import pool from "../db.js";
+import { authenticateToken } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// GET все позиции пользователя
-router.get("/:user_id", async (req, res) => {
-  const { user_id } = req.params;
+// GET все позиции текущего пользователя
+router.get("/", authenticateToken, async (req, res) => {
+  const user_id = req.user.id; // берём id из токена
   try {
     const result = await pool.query(
       "SELECT * FROM positions WHERE user_id = $1 ORDER BY id ASC",
@@ -20,10 +21,9 @@ router.get("/:user_id", async (req, res) => {
 });
 
 // POST добавить новую позицию
-router.post("/", async (req, res) => {
+router.post("/", authenticateToken, async (req, res) => {
   try {
     const {
-      user_id,
       symbol,
       entry,
       stop_loss,
@@ -50,7 +50,7 @@ router.post("/", async (req, res) => {
         ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
        RETURNING *`,
       [
-        user_id,
+        req.user.id, // используем id из токена
         symbol,
         entry,
         stop_loss,
@@ -77,7 +77,7 @@ router.post("/", async (req, res) => {
 });
 
 // PUT обновить позицию
-router.put("/:id", async (req, res) => {
+router.put("/:id", authenticateToken, async (req, res) => {
   const { id } = req.params;
   try {
     const fields = req.body;
@@ -93,12 +93,12 @@ router.put("/:id", async (req, res) => {
     const result = await pool.query(
       `UPDATE positions SET ${setClause} WHERE id = $${
         keys.length + 1
-      } RETURNING *`,
-      [...values, id]
+      } AND user_id = $${keys.length + 2} RETURNING *`,
+      [...values, id, req.user.id] // проверка, что пользователь владелец позиции
     );
 
     if (result.rows.length === 0) {
-      return res.status(404).json({ error: "Позиция не найдена" });
+      return res.status(404).json({ error: "Позиция не найдена или не принадлежит пользователю" });
     }
 
     res.json(result.rows[0]);
@@ -109,16 +109,16 @@ router.put("/:id", async (req, res) => {
 });
 
 // DELETE удалить позицию
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", authenticateToken, async (req, res) => {
   const { id } = req.params;
   try {
     const result = await pool.query(
-      "DELETE FROM positions WHERE id = $1 RETURNING *",
-      [id]
+      "DELETE FROM positions WHERE id = $1 AND user_id = $2 RETURNING *",
+      [id, req.user.id]
     );
 
     if (result.rows.length === 0) {
-      return res.status(404).json({ error: "Позиция не найдена" });
+      return res.status(404).json({ error: "Позиция не найдена или не принадлежит пользователю" });
     }
 
     res.json({ message: "Позиция удалена", deleted: result.rows[0] });
