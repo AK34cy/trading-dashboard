@@ -8,7 +8,10 @@ const router = express.Router();
 router.get("/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await pool.query("SELECT id, email, name, avatar, google_id, created_at FROM users WHERE id = $1", [id]);
+    const result = await pool.query(
+      "SELECT id, email, name, avatar, google_id, created_at FROM users WHERE id = $1",
+      [id]
+    );
     if (result.rows.length === 0) {
       return res.status(404).json({ error: "Пользователь не найден" });
     }
