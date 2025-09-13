@@ -24,7 +24,7 @@ async function tryParseJson(response) {
 
 // ======== Auth API ========
 
-export async function loginUser(email, password) {
+export async function loginUser({ email, password }) {
   try {
     const res = await fetch(`${BASE_URL}/auth/login`, {
       method: "POST",
@@ -41,7 +41,7 @@ export async function loginUser(email, password) {
   }
 }
 
-export async function registerUser(email, name, password) {
+export async function registerUser({ email, name, password }) {
   try {
     const res = await fetch(`${BASE_URL}/users/register`, {
       method: "POST",
