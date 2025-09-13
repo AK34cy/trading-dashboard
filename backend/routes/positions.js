@@ -1,17 +1,34 @@
 // backend/routes/positions.js
 import express from "express";
 import pool from "../db.js";
-import { authenticateToken } from "../middleware/authMiddleware.js";
+import jwt from "jsonwebtoken";
 
 const router = express.Router();
 
-// GET все позиции текущего пользователя
-router.get("/", authenticateToken, async (req, res) => {
-  const user_id = req.user.id; // берём id из токена
+// JWT middleware
+const authMiddleware = (req, res, next) => {
+  const authHeader = req.headers["authorization"];
+  if (!authHeader) return res.status(401).json({ error: "Нет токена" });
+
+  const token = authHeader.split(" ")[1];
+  if (!token) return res.status(401).json({ error: "Неверный токен" });
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = decoded; // { id, email, ... }
+    next();
+  } catch (err) {
+    console.error("Ошибка проверки токена:", err.message);
+    return res.status(401).json({ error: "Неверный токен" });
+  }
+};
+
+// GET все позиции пользователя
+router.get("/", authMiddleware, async (req, res) => {
   try {
     const result = await pool.query(
       "SELECT * FROM positions WHERE user_id = $1 ORDER BY id ASC",
-      [user_id]
+      [req.user.id]
     );
     res.json(result.rows);
   } catch (err) {
@@ -21,7 +38,7 @@ router.get("/", authenticateToken, async (req, res) => {
 });
 
 // POST добавить новую позицию
-router.post("/", authenticateToken, async (req, res) => {
+router.post("/", authMiddleware, async (req, res) => {
   try {
     const {
       symbol,
@@ -50,7 +67,7 @@ router.post("/", authenticateToken, async (req, res) => {
         ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
        RETURNING *`,
       [
-        req.user.id, // используем id из токена
+        req.user.id,
         symbol,
         entry,
         stop_loss,
@@ -77,7 +94,7 @@ router.post("/", authenticateToken, async (req, res) => {
 });
 
 // PUT обновить позицию
-router.put("/:id", authenticateToken, async (req, res) => {
+router.put("/:id", authMiddleware, async (req, res) => {
   const { id } = req.params;
   try {
     const fields = req.body;
@@ -91,14 +108,12 @@ router.put("/:id", authenticateToken, async (req, res) => {
     const setClause = keys.map((key, idx) => `${key} = $${idx + 1}`).join(", ");
 
     const result = await pool.query(
-      `UPDATE positions SET ${setClause} WHERE id = $${
-        keys.length + 1
-      } AND user_id = $${keys.length + 2} RETURNING *`,
-      [...values, id, req.user.id] // проверка, что пользователь владелец позиции
+      `UPDATE positions SET ${setClause} WHERE id = $${keys.length + 1} AND user_id = $${keys.length + 2} RETURNING *`,
+      [...values, id, req.user.id]
     );
 
     if (result.rows.length === 0) {
-      return res.status(404).json({ error: "Позиция не найдена или не принадлежит пользователю" });
+      return res.status(404).json({ error: "Позиция не найдена" });
     }
 
     res.json(result.rows[0]);
@@ -109,7 +124,7 @@ router.put("/:id", authenticateToken, async (req, res) => {
 });
 
 // DELETE удалить позицию
-router.delete("/:id", authenticateToken, async (req, res) => {
+router.delete("/:id", authMiddleware, async (req, res) => {
   const { id } = req.params;
   try {
     const result = await pool.query(
@@ -118,7 +133,7 @@ router.delete("/:id", authenticateToken, async (req, res) => {
     );
 
     if (result.rows.length === 0) {
-      return res.status(404).json({ error: "Позиция не найдена или не принадлежит пользователю" });
+      return res.status(404).json({ error: "Позиция не найдена" });
     }
 
     res.json({ message: "Позиция удалена", deleted: result.rows[0] });
