@@ -14,18 +14,19 @@ export default function LoginForm({ onLoginSuccess }) {
     setError("");
 
     try {
-      // передаём объект, как теперь требует api.js
+      // передаём объект, как требует api.js
       const response = await loginUser({ email, password });
 
       if (response && response.token) {
         // Токен уже сохранён в localStorage в api.js
-        onLoginSuccess?.(response.user || null); 
+        onLoginSuccess?.(response.user || null);
       } else {
-        setError(response?.error || "Ошибка при логине");
+        // если response === null или нет token
+        setError(response?.error || "Неверный email или пароль");
       }
     } catch (err) {
       console.error("LoginForm handleSubmit error:", err);
-      setError("Ошибка при логине");
+      setError(err.message || "Ошибка при логине");
     } finally {
       setLoading(false);
     }
