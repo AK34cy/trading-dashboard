@@ -1,7 +1,7 @@
 // frontend/src/components/PositionsTable.js
 import React, { useState, useEffect } from "react";
 
-function PositionsTable({ positions = [], prices = {}, remove }) {
+function PositionsTable({ positions = [], prices = {}, add, remove }) {
   const [newPosition, setNewPosition] = useState({
     symbol: "",
     entry: "",
@@ -17,7 +17,7 @@ function PositionsTable({ positions = [], prices = {}, remove }) {
     pnl: 0,
   });
 
-  // пересчёт при изменении формы или цены
+  // пересчёт при изменении формы или цен
   useEffect(() => {
     const { entry, stop_loss, take_profit, risk_percent } = newPosition;
     const symbol = newPosition.symbol || "BTC";
@@ -67,6 +67,7 @@ function PositionsTable({ positions = [], prices = {}, remove }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!add) return; // защита если add не передан
     const added = await add({
       ...newPosition,
       volume_money: parseFloat(calc.volume_money),
@@ -100,7 +101,7 @@ function PositionsTable({ positions = [], prices = {}, remove }) {
         </tr>
       </thead>
       <tbody>
-        {/* строка формы */}
+        {/* форма добавления */}
         <tr>
           <td>
             <input
