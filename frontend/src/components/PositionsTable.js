@@ -1,7 +1,7 @@
 // frontend/src/components/PositionsTable.js
 import React, { useState, useEffect } from "react";
 
-function PositionsTable({ positions, prices, add, remove }) {
+function PositionsTable({ positions = [], prices = {}, remove }) {
   const [newPosition, setNewPosition] = useState({
     symbol: "",
     entry: "",
