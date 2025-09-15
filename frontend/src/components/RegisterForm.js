@@ -17,10 +17,13 @@ export default function RegisterForm({ onRegisterSuccess }) {
     setSuccess("");
 
     try {
+      // вызываем API с объектом
       const response = await registerUser({ name, email, password });
+
       if (response && response.id) {
         setSuccess("Регистрация успешна! Теперь войдите.");
         onRegisterSuccess?.(); // сообщаем родителю, что регистрация удалась
+        // сброс формы
         setName("");
         setEmail("");
         setPassword("");
@@ -29,7 +32,7 @@ export default function RegisterForm({ onRegisterSuccess }) {
       }
     } catch (err) {
       console.error("RegisterForm handleSubmit error:", err);
-      setError("Ошибка при регистрации");
+      setError(err.message || "Ошибка при регистрации");
     } finally {
       setLoading(false);
     }
