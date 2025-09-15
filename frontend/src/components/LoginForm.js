@@ -14,10 +14,12 @@ export default function LoginForm({ onLoginSuccess }) {
     setError("");
 
     try {
-      const response = await loginUser(email, password);
+      // передаём объект, как теперь требует api.js
+      const response = await loginUser({ email, password });
+
       if (response && response.token) {
         // Токен уже сохранён в localStorage в api.js
-        onLoginSuccess?.(response.user); // сообщаем родителю об успешном логине
+        onLoginSuccess?.(response.user || null); 
       } else {
         setError(response?.error || "Ошибка при логине");
       }
@@ -30,7 +32,10 @@ export default function LoginForm({ onLoginSuccess }) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-sm mx-auto p-4 border rounded bg-gray-50">
+    <form
+      onSubmit={handleSubmit}
+      className="max-w-sm mx-auto p-4 border rounded bg-gray-50"
+    >
       <h2 className="text-xl font-bold mb-4">Вход</h2>
 
       <div className="mb-2">
