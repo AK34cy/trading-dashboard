@@ -14,14 +14,18 @@ export default function LoginForm({ onLoginSuccess }) {
     setError("");
 
     try {
-      // передаём объект, как требует api.js
+      // отправка логина
       const response = await loginUser({ email, password });
 
       if (response && response.token) {
         // Токен уже сохранён в localStorage в api.js
-        onLoginSuccess?.(response.user || null);
+
+        // Формируем объект пользователя, если его нет в ответе
+        const user = response.user || { id: 1, name: email };
+
+        // Передаём в App.js
+        onLoginSuccess?.(user);
       } else {
-        // если response === null или нет token
         setError(response?.error || "Неверный email или пароль");
       }
     } catch (err) {
