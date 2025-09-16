@@ -9,10 +9,11 @@ import {
 export default function usePositions(user_id, token) {
   const [positions, setPositions] = useState([]);
   const [prices, setPrices] = useState({});
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // false по умолчанию
 
   // Функция для получения позиций
   const fetchPositions = async () => {
+    if (!user_id || !token) return; // Если нет пользователя или токена — ничего не делаем
     setLoading(true);
     try {
       const data = await getPositions(user_id, token); // передаём токен
@@ -24,14 +25,19 @@ export default function usePositions(user_id, token) {
     }
   };
 
-  // Загружаем позиции при старте
+  // Загружаем позиции при старте и при изменении user_id или token
   useEffect(() => {
-    fetchPositions();
+    if (user_id && token) {
+      fetchPositions();
+    } else {
+      setPositions([]); // очищаем массив, если нет пользователя
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user_id, token]);
 
   // Добавление позиции
   const add = async (position) => {
+    if (!token) return null;
     try {
       const newPos = await addPosition(position, token);
       if (newPos) setPositions((prev) => [...prev, newPos]);
@@ -44,6 +50,7 @@ export default function usePositions(user_id, token) {
 
   // Обновление позиции
   const update = async (id, position) => {
+    if (!token) return null;
     try {
       const updated = await updatePosition(id, position, token);
       if (updated) {
@@ -60,6 +67,7 @@ export default function usePositions(user_id, token) {
 
   // Удаление позиции
   const remove = async (id) => {
+    if (!token) return null;
     try {
       const result = await deletePosition(id, token);
       if (result) {
@@ -79,6 +87,6 @@ export default function usePositions(user_id, token) {
     add,
     update,
     remove,
-    fetchPositions, // чтобы можно было вручную обновить список
+    fetchPositions,
   };
 }
