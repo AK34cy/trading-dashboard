@@ -7,11 +7,11 @@ import usePositions from "./hooks/usePositions";
 import Auth from "./pages/Auth";
 
 function App() {
-  const [user, setUser] = useState(null); // текущий пользователь
-  const [prices, setPrices] = useState({ BTC: 30000, ETH: 1800 }); // локальные цены
+  const [user, setUser] = useState(null);
+  const [prices, setPrices] = useState({ BTC: 30000, ETH: 1800 });
   const [token, setToken] = useState(null);
 
-  // Проверка токена при загрузке
+  // Проверка токена и пользователя при загрузке
   useEffect(() => {
     const storedToken = localStorage.getItem("token");
     const storedUser = localStorage.getItem("user");
@@ -25,14 +25,10 @@ function App() {
     }
   }, []);
 
+  // Вызов хука usePositions только если есть пользователь и токен
   const userId = user?.id || null;
-  const { positions: rawPositions, add, update, remove, loading } = usePositions(userId, token);
-
-  // Всегда передаём массив, даже если undefined
-  const positions = Array.isArray(rawPositions) ? rawPositions : [];
-
-  // Логируем для отладки
-  console.log("App render:", { user, token, positions, loading });
+  const positionsHook = user && token ? usePositions(userId, token) : { positions: [], add: () => {}, update: () => {}, remove: () => {}, loading: false };
+  const { positions = [], add, update, remove, loading } = positionsHook;
 
   // Депозиты и стандартная позиция
   const [depositUSDT, setDepositUSDT] = useState(50000);
@@ -80,7 +76,7 @@ function App() {
 
         <PositionsTable
           positions={positions}
-          prices={prices || {}}
+          prices={prices}
           add={add}
           remove={remove}
         />
