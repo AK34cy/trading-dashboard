@@ -9,21 +9,30 @@ import Auth from "./pages/Auth";
 function App() {
   const [user, setUser] = useState(null); // текущий пользователь
   const [prices, setPrices] = useState({ BTC: 30000, ETH: 1800 }); // локальные цены
-
-  // Проверка токена при загрузке
   const [token, setToken] = useState(null);
 
+  // Проверка токена при загрузке
   useEffect(() => {
     const storedToken = localStorage.getItem("token");
-    if (storedToken) {
+    const storedUser = localStorage.getItem("user");
+    if (storedToken && storedUser) {
       setToken(storedToken);
-      setUser({ id: 1, name: "Demo User" }); // для MVP просто ставим пользователя
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (err) {
+        console.error("Ошибка парсинга user из localStorage:", err);
+      }
     }
   }, []);
 
-  // Передаём user_id и token в хук
   const userId = user?.id || null;
-  const { positions = [], add, update, remove } = usePositions(userId, token);
+  const { positions: rawPositions, add, update, remove, loading } = usePositions(userId, token);
+
+  // Всегда передаём массив, даже если undefined
+  const positions = Array.isArray(rawPositions) ? rawPositions : [];
+
+  // Логируем для отладки
+  console.log("App render:", { user, token, positions, loading });
 
   // Депозиты и стандартная позиция
   const [depositUSDT, setDepositUSDT] = useState(50000);
@@ -33,6 +42,7 @@ function App() {
 
   const handleLogout = () => {
     localStorage.removeItem("token");
+    localStorage.removeItem("user");
     setToken(null);
     setUser(null);
   };
@@ -69,7 +79,7 @@ function App() {
         />
 
         <PositionsTable
-          positions={positions || []}
+          positions={positions}
           prices={prices || {}}
           add={add}
           remove={remove}
