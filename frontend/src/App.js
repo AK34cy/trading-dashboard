@@ -9,7 +9,21 @@ import Auth from "./pages/Auth";
 function App() {
   const [user, setUser] = useState(null); // текущий пользователь
   const [prices, setPrices] = useState({ BTC: 30000, ETH: 1800 }); // локальные цены
-  const { positions = [], add, update, remove } = usePositions();
+
+  // Проверка токена при загрузке
+  const [token, setToken] = useState(null);
+
+  useEffect(() => {
+    const storedToken = localStorage.getItem("token");
+    if (storedToken) {
+      setToken(storedToken);
+      setUser({ id: 1, name: "Demo User" }); // для MVP просто ставим пользователя
+    }
+  }, []);
+
+  // Передаём user_id и token в хук
+  const userId = user?.id || null;
+  const { positions = [], add, update, remove } = usePositions(userId, token);
 
   // Депозиты и стандартная позиция
   const [depositUSDT, setDepositUSDT] = useState(50000);
@@ -17,16 +31,9 @@ function App() {
   const [standardPosition, setStandardPosition] = useState(2);
   const [availableVolume] = useState(100000);
 
-  // Проверка токена при загрузке
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      setUser({ id: 1, name: "Demo User" }); // для MVP просто ставим пользователя
-    }
-  }, []);
-
   const handleLogout = () => {
     localStorage.removeItem("token");
+    setToken(null);
     setUser(null);
   };
 
