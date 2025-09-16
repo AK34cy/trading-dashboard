@@ -17,7 +17,14 @@ export default function Auth({ setUser }) {
       ) : (
         <LoginForm
           onLoginSuccess={(user) => {
-            setUser(user);
+            console.log("Auth onLoginSuccess received user:", user);
+
+            // проверяем, что объект корректный
+            if (user && user.id) {
+              setUser(user);
+            } else {
+              console.warn("Auth: получен некорректный user:", user);
+            }
           }}
         />
       )}
