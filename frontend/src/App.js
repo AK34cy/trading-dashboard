@@ -35,7 +35,7 @@ function App() {
 
   const userId = user?.id || null;
 
-  // usePositions вызывается всегда, но внутри него проверяем userId и token
+  // Всегда вызываем usePositions, но внутри хука проверяем userId и token
   const { positions, add, update, remove, loading } = usePositions(userId, token);
 
   const handleLogout = () => {
@@ -72,7 +72,11 @@ function App() {
         {!user ? (
           <>
             {/* Форма авторизации + справочная информация */}
-            <Auth setUser={setUser} />
+            <Auth setUser={(loggedUser) => {
+              setUser(loggedUser);
+              const storedToken = localStorage.getItem("token");
+              if (storedToken) setToken(storedToken);
+            }} />
             <div className="mt-6 p-4 border rounded bg-gray-50">
               <h2 className="text-lg font-bold mb-2">Пример курсов</h2>
               <p>BTC: ${prices.BTC}</p>
@@ -93,8 +97,8 @@ function App() {
             />
 
             <PositionsTable
-              positions={positions || []}
-              prices={prices || {}}
+              positions={Array.isArray(positions) ? positions : []}
+              prices={prices}
               add={add}
               remove={remove}
             />
