@@ -72,11 +72,15 @@ function App() {
         {!user ? (
           <>
             {/* Форма авторизации + справочная информация */}
-            <Auth setUser={(loggedUser) => {
-              setUser(loggedUser);
-              const storedToken = localStorage.getItem("token");
-              if (storedToken) setToken(storedToken);
-            }} />
+            <Auth
+              user={user}
+              onLogin={(loggedUser) => {
+                setUser(loggedUser);
+                const storedToken = localStorage.getItem("token");
+                if (storedToken) setToken(storedToken);
+              }}
+              onLogout={handleLogout}
+            />
             <div className="mt-6 p-4 border rounded bg-gray-50">
               <h2 className="text-lg font-bold mb-2">Пример курсов</h2>
               <p>BTC: ${prices.BTC}</p>
