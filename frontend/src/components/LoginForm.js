@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { loginUser } from "../api/api";
 
-export default function LoginForm({ onLoginSuccess }) {
+export default function LoginForm({ onLogin }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -14,17 +14,15 @@ export default function LoginForm({ onLoginSuccess }) {
     setError("");
 
     try {
-      // отправка логина
       const response = await loginUser({ email, password });
 
       if (response && response.token) {
-        // Токен уже сохранён в localStorage в api.js
-
-        // Формируем объект пользователя, если его нет в ответе
+        // Токен сохраняется в localStorage внутри api.js
+        // Формируем объект пользователя
         const user = response.user || { id: 1, name: email };
 
-        // Передаём в App.js
-        onLoginSuccess?.(user);
+        // Вызываем callback для App.js
+        onLogin(user);
       } else {
         setError(response?.error || "Неверный email или пароль");
       }
