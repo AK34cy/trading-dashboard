@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import LoginForm from "../components/LoginForm";
 import RegisterForm from "../components/RegisterForm";
 
-export default function Auth({ setUser }) {
+export default function Auth({ user, onLogin, onLogout }) {
   const [isRegister, setIsRegister] = useState(false);
 
   return (
@@ -15,18 +15,18 @@ export default function Auth({ setUser }) {
           }}
         />
       ) : (
-        <LoginForm
-          onLoginSuccess={(user) => {
-            console.log("Auth onLoginSuccess received user:", user);
+        <LoginForm onLogin={onLogin} /> // передаём callback вниз
+      )}
 
-            // проверяем, что объект корректный
-            if (user && user.id) {
-              setUser(user);
-            } else {
-              console.warn("Auth: получен некорректный user:", user);
-            }
-          }}
-        />
+      {user && (
+        <div className="mt-4 text-center">
+          <button
+            onClick={onLogout}
+            className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition"
+          >
+            Выйти
+          </button>
+        </div>
       )}
 
       <div className="mt-4 text-center">
