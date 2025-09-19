@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import LoginForm from "../components/LoginForm";
 import RegisterForm from "../components/RegisterForm";
 
-export default function Auth({ user, onLogin, onLogout }) {
+export default function Auth({ onLogin }) {
   const [isRegister, setIsRegister] = useState(false);
 
   return (
@@ -15,18 +15,7 @@ export default function Auth({ user, onLogin, onLogout }) {
           }}
         />
       ) : (
-        <LoginForm onLogin={onLogin} /> // передаём callback вниз
-      )}
-
-      {user && (
-        <div className="mt-4 text-center">
-          <button
-            onClick={onLogout}
-            className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition"
-          >
-            Выйти
-          </button>
-        </div>
+        <LoginForm onLogin={onLogin} />
       )}
 
       <div className="mt-4 text-center">
