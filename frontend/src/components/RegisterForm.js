@@ -1,8 +1,10 @@
 // frontend/src/components/RegisterForm.js
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import { registerUser } from "../api/api";
+import { UserContext } from "../context/UserContext"; // подключаем контекст
 
-export default function RegisterForm({ onRegisterSuccess }) {
+export default function RegisterForm() {
+  const { setUser } = useContext(UserContext); // получаем функцию обновления пользователя
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -17,12 +19,13 @@ export default function RegisterForm({ onRegisterSuccess }) {
     setSuccess("");
 
     try {
-      // вызываем API с объектом
       const response = await registerUser({ name, email, password });
 
       if (response && response.id) {
-        setSuccess("Регистрация успешна! Теперь войдите.");
-        onRegisterSuccess?.(); // сообщаем родителю, что регистрация удалась
+        // обновляем глобальный контекст пользователя сразу после успешной регистрации
+        setUser({ id: response.id, name: response.name, email: response.email });
+        setSuccess("Регистрация успешна! Вы вошли автоматически.");
+
         // сброс формы
         setName("");
         setEmail("");
