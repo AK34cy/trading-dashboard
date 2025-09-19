@@ -1,8 +1,11 @@
 // frontend/src/components/LoginForm.js
 import React, { useState } from "react";
 import { loginUser } from "../api/api";
+import { useAuth } from "../context/AuthContext";
 
-export default function LoginForm({ onLogin }) {
+export default function LoginForm() {
+  const { login } = useAuth();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -14,15 +17,17 @@ export default function LoginForm({ onLogin }) {
     setError("");
 
     try {
+      // отправка логина
       const response = await loginUser({ email, password });
 
       if (response && response.token) {
-        // Токен сохраняется в localStorage внутри api.js
-        // Формируем объект пользователя
+        // токен уже сохранён в localStorage в api.js
+
+        // формируем объект пользователя, если его нет в ответе
         const user = response.user || { id: 1, name: email };
 
-        // Вызываем callback для App.js
-        onLogin(user);
+        // обновляем глобальное состояние через контекст
+        login(user);
       } else {
         setError(response?.error || "Неверный email или пароль");
       }
