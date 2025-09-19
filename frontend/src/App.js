@@ -5,43 +5,51 @@ import PositionsTable from "./components/PositionsTable";
 import NewPositionForm from "./components/NewPositionForm";
 import usePositions from "./hooks/usePositions";
 import Auth from "./pages/Auth";
+import apiClient, { setAuthToken, clearAuthToken } from "./services/apiClient";
 
 function App() {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(null);
 
-  // Пример курсов для справочной информации
+  // Курсы (пока статично, позже заменим на API)
   const [prices] = useState({ BTC: 30000, ETH: 1800 });
 
-  // Депозиты и стандартная позиция
+  // Депозиты и настройки
   const [depositUSDT, setDepositUSDT] = useState(50000);
   const [depositBTC, setDepositBTC] = useState(1);
   const [standardPosition, setStandardPosition] = useState(2);
   const [availableVolume] = useState(100000);
 
-  // Проверка токена и пользователя при загрузке
+  // Восстановление сессии при старте
   useEffect(() => {
     const storedToken = localStorage.getItem("token");
     const storedUser = localStorage.getItem("user");
+
     if (storedToken && storedUser) {
-      setToken(storedToken);
+      setAuthToken(storedToken); // сразу в apiClient
       try {
         setUser(JSON.parse(storedUser));
       } catch (err) {
-        console.error("Ошибка парсинга user из localStorage:", err);
+        console.error("Ошибка парсинга user:", err);
       }
     }
   }, []);
 
-  const userId = user?.id || null;
+  // Хук позиций (сам знает про apiClient и токен)
+  const { positions, add, update, remove, loading } = usePositions();
 
-  // Всегда вызываем usePositions, но внутри хука проверяем userId и token
-  const { positions, add, update, remove, loading } = usePositions(userId, token);
+  // Авторизация
+  const handleLogin = (loggedUser, token) => {
+    localStorage.setItem("token", token);
+    localStorage.setItem("user", JSON.stringify(loggedUser));
+    setAuthToken(token);
+    setUser(loggedUser);
+  };
 
+  // Выход
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
-    setToken(null);
+    clearAuthToken();
     setUser(null);
   };
 
@@ -67,20 +75,11 @@ function App() {
         </div>
       </div>
 
-      {/* Основная панель */}
+      {/* Контент */}
       <div className="p-6">
         {!user ? (
           <>
-            {/* Форма авторизации + справочная информация */}
-            <Auth
-              user={user}
-              onLogin={(loggedUser) => {
-                setUser(loggedUser);
-                const storedToken = localStorage.getItem("token");
-                if (storedToken) setToken(storedToken);
-              }}
-              onLogout={handleLogout}
-            />
+            <Auth onLogin={handleLogin} />
             <div className="mt-6 p-4 border rounded bg-gray-50">
               <h2 className="text-lg font-bold mb-2">Пример курсов</h2>
               <p>BTC: ${prices.BTC}</p>
@@ -105,6 +104,7 @@ function App() {
               prices={prices}
               add={add}
               remove={remove}
+              loading={loading}
             />
 
             <NewPositionForm
